@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Class Attendance (Phone)</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#667085;--bd:#e3e6eb;--ac:#2563eb;--ok:#16a34a;--no:#dc2626;--okb:#dcfce7;--nob:#fee2e2;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111418;--card:#1a1f26;--tx:#e8eaed;--mu:#98a2b3;--bd:#2b323b;--ac:#60a5fa;--ok:#4ade80;--no:#f87171;--okb:#12351f;--nob:#3b1717;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111418;--card:#1a1f26;--tx:#e8eaed;--mu:#98a2b3;--bd:#2b323b;--ac:#60a5fa;--ok:#4ade80;--no:#f87171;--okb:#12351f;--nob:#3b1717;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 12px}
+.tabs,.lec{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 12px}
+button{cursor:pointer}button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:10px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.st{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd);cursor:pointer;user-select:none}
+.st.P{background:var(--okb);border-color:var(--ok)}.st.A{background:var(--nob);border-color:var(--no)}
+.st b{font-size:12px;min-width:16px;text-align:right}
+.mu{color:var(--mu);font-size:13px}.msg{color:var(--ok);font-size:13px}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%}
+th,td{padding:6px 10px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+.low{color:var(--no);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}.stats div{text-align:center}.stats b{display:block;font-size:22px}
+textarea{width:100%;min-height:200px}
+</style></head><body><div class="wrap">
+<h1>📋 Class Attendance Dashboard</h1>
+<div class="tabs" id="tabs"></div>
+<div id="msg" class="mu">Loading…</div>
+<div id="view"></div>
+</div>
+<script>
+const N=50,L=6,LN=["Application of ICT","Programming Fundamentals","Calculus and Analytical Geometry","Functional English","Quantitative Reasoning","Introduction to Sociology"];
+let db=null,xf="",xt="",xl=0,canWrite=true,roster=Array.from({length:N},(_,i)=>"Student "+(i+1)),all={},tab="mark",lec=1,date=new Date().toISOString().slice(0,10),cur=null,rl=0;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const blank=()=>{const o={};for(let l=1;l<=L;l++)o["L"+l]="-".repeat(N);return o};
+function note(t,ok){$("msg").textContent=t;$("msg").className=ok?"msg":"mu"}
+function tabs(){$("tabs").innerHTML=[["mark","✏️ Mark attendance"],["report","📊 Reports"],["set","⚙️ Student names"]].map(([k,t])=>`<button class="${tab===k?"on":""}" onclick="tab='${k}';render()">${t}</button>`).join("")}
+function lecBtns(){return `<div class="lec">`+[...Array(L)].map((_,i)=>`<button class="${lec===i+1?"on":""}" onclick="lec=${i+1};render()">${i+1}. ${LN[i]}</button>`).join("")+`</div>`}
+function render(){tabs();({mark:rMark,report:rReport,set:rSet})[tab]()}
+function rMark(){
+ cur=cur||Object.assign(blank(),all[date]||{});
+ const s=cur["L"+lec];const p=[...s].filter(c=>c==="P").length,a=[...s].filter(c=>c==="A").length;
+ $("view").innerHTML=`<div class="card row"><label>Date <input type="date" id="d" value="${date}"></label></div>${lecBtns()}
+ <div class="card"><div class="row"><button onclick="setAll('P')">All present</button><button onclick="setAll('A')">All absent</button><button onclick="setAll('-')">Clear</button>
+ <span class="mu">Tap a name to toggle: present → absent → unmarked</span></div>
+ <p class="mu">Present: <b>${p}</b> · Absent: <b>${a}</b> · Unmarked: <b>${N-p-a}</b></p>
+ <div class="grid">${roster.map((n,i)=>`<div class="st ${s[i]==="-"?"":s[i]}" onclick="tog(${i})"><span>${i+1}. ${esc(n)}</span><b>${s[i]==="P"?"P":s[i]==="A"?"A":""}</b></div>`).join("")}</div>
+ <p><button class="on" onclick="save()" ${canWrite?"":"disabled"}>💾 Save ${LN[lec-1]} (${date})</button></p></div>`;
+ $("d").onchange=e=>{date=e.target.value;cur=null;render()};
+}
+function tog(i){const s=[...cur["L"+lec]];s[i]=s[i]==="-"?"P":s[i]==="P"?"A":"-";cur["L"+lec]=s.join("");rMark()}
+function setAll(c){cur["L"+lec]=c.repeat(N);rMark()}
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+function save(){
+ all[date]=cur;
+ if(store.set("att_all",all))note("Saved "+date+" \u2013 "+LN[lec-1],true);else note("Could not save on this device. Browser storage may be blocked.");
+}
+function rReport(){
+ const dates=Object.keys(all).sort();
+ const ls=rl===0?[...Array(L)].map((_,i)=>i+1):[rl];
+ const per=roster.map(()=>({p:0,t:0}));const rows=[];let lc=0;
+ dates.forEach(d=>{let p=0,a=0,dl=0;ls.forEach(l=>{const s=all[d]["L"+l]||"-".repeat(N);for(let i=0;i<N;i++){if(s[i]==="P"){p++;per[i].p++;per[i].t++}else if(s[i]==="A"){a++;per[i].t++}}if(/[PA]/.test(s)){lc++;dl++}});if(p+a)rows.push([d,p,a,dl])});
+ const tp=rows.reduce((x,r)=>x+r[1],0),ta=rows.reduce((x,r)=>x+r[2],0),pc=v=>v[1]?Math.round(v[0]/v[1]*100):null;
+ $("view").innerHTML=`<div class="lec"><button class="${rl===0?"on":""}" onclick="rl=0;render()">All lectures</button>`+[...Array(L)].map((_,i)=>`<button class="${rl===i+1?"on":""}" onclick="rl=${i+1};render()">${i+1}. ${LN[i]}</button>`).join("")+`</div>
+ <div class="card"><button onclick="exportCsv()">⬇️ Download CSV backup (all data)</button></div>
+ <div class="card"><b>Download a specific day / lecture</b><div class="row" style="margin-top:8px"><label>From <input type="date" value="${xf}" onchange="xf=this.value"></label><label>To <input type="date" value="${xt}" onchange="xt=this.value"></label><select onchange="xl=+this.value"><option value="0">All lectures</option>${LN.map((n,i)=>`<option value="${i+1}" ${xl===i+1?"selected":""}>${i+1}. ${n}</option>`).join("")}</select><button class="on" onclick="exportCsv(true)">⬇️ Download</button></div><p class="mu">For a single day, fill only "From". Leave both dates empty for all days.</p></div>
+ <div class="card stats"><div><b>${rows.length}</b><span class="mu">days recorded</span></div><div><b>${lc}</b><span class="mu">lectures recorded</span></div><div><b>${tp+ta?Math.round(tp/(tp+ta)*100):0}%</b><span class="mu">avg attendance</span></div><div><b>${ta}</b><span class="mu">total absences</span></div></div>
+ <div class="card"><b>Day-wise</b><div class="scroll"><table><tr><th>Date</th><th>Present</th><th>Absent</th><th>Lectures</th><th>%</th></tr>${rows.length?rows.slice().reverse().map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${Math.round(r[1]/(r[1]+r[2])*100)}%</td></tr>`).join(""):`<tr><td colspan=5 class="mu">No data yet</td></tr>`}</table></div></div>
+ <div class="card"><b>Student-wise</b> <span class="mu">(red = below 75%)</span><div class="scroll"><table><tr><th>#</th><th>Name</th><th>Present</th><th>Classes</th><th>%</th></tr>${roster.map((n,i)=>{const v=pc([per[i].p,per[i].t]);return `<tr><td>${i+1}</td><td>${esc(n)}</td><td>${per[i].p}</td><td>${per[i].t}</td><td class="${v!==null&&v<75?"low":""}">${v===null?"–":v+"%"}</td></tr>`}).join("")}</table></div></div>`;
+}
+function exportCsv(f){
+ const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+ const out=["Date,Lecture,Roll,Name,Status"];
+ Object.keys(all).sort().forEach(d=>{if(f){if(xf&&d<xf)return;if((xt||xf)&&d>(xt||xf))return}for(let l=1;l<=L;l++){if(f&&xl&&l!==xl)continue;const s=all[d]["L"+l];if(!s)continue;for(let i=0;i<N;i++){const c=s[i];if(c==="P"||c==="A")out.push([d,q(LN[l-1]),i+1,q(roster[i]),c==="P"?"Present":"Absent"].join(","))}}});
+ if(out.length===1){note(f?"No attendance found for that selection.":"No attendance saved yet.");return}
+ const name="attendance"+(f?"-"+(xf||"all")+(xt&&xt!==xf?"_to_"+xt:"")+(xl?"-L"+xl:""):"-backup-"+new Date().toISOString().slice(0,10))+".csv";
+ const u=URL.createObjectURL(new Blob(["\uFEFF"+out.join("\n")],{type:"text/csv"}));
+ const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);note("CSV downloaded",true);
+}
+function rSet(){
+ $("view").innerHTML=`<div class="card"><p class="mu">One name per line (up to ${N}). Order = roll number.</p><textarea id="ta">${esc(roster.join("\n"))}</textarea><p><button class="on" onclick="saveNames()" ${canWrite?"":"disabled"}>Save names</button></p></div>`;
+}
+function saveNames(){
+ const n=$("ta").value.split("\n").map(s=>s.trim()).filter(Boolean).slice(0,N);while(n.length<N)n.push("Student "+(n.length+1));
+ roster=n;note(store.set("att_roster",roster)?"Names saved":"Could not save on this device.",true);render();
+}
+function init(){roster=store.get("att_roster",roster);all=store.get("att_all",{});note("Ready. Data is stored on this device only, so download a CSV backup often.",true);render()}
+init();
+</script></body></html>
