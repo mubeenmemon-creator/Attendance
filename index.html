@@ -33,7 +33,7 @@ textarea{width:100%;min-height:200px}
 <div id="view"></div>
 </div>
 <script>
-const N=50,L=6,LN=["Application of ICT","Programming Fundamentals","Calculus and Analytical Geometry","Functional English","Quantitative Reasoning","Introduction to Sociology"];
+const N=60,L=6,LN=["Application of ICT","Programming Fundamentals","Calculus and Analytical Geometry","Functional English","Quantitative Reasoning","Introduction to Sociology"];
 let db=null,xf="",xt="",xl=0,canWrite=true,roster=Array.from({length:N},(_,i)=>"Student "+(i+1)),all={},tab="mark",lec=1,date=new Date().toISOString().slice(0,10),cur=null,rl=0;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
