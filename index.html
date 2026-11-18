@@ -88,7 +88,10 @@ function rSet(){
 function saveNames(){
  const n=$("ta").value.split("\n").map(s=>s.trim()).filter(Boolean).slice(0,N);while(n.length<N)n.push("Student "+(n.length+1));
  roster=n;note(store.set("att_roster",roster)?"Names saved":"Could not save on this device.",true);render();
-}
-function init(){roster=store.get("att_roster",roster);all=store.get("att_all",{});note("Ready. Data is stored on this device only, so download a CSV backup often.",true);render()}
+ }
+ function init(){roster=store.get("att_roster",roster);all=store.get("att_all",{});
+while(roster.length<N)roster.push("Student "+(roster.length+1));
+Object.values(all).forEach(day=>{for(let l=1;l<=L;l++){const k="L"+l;if(day[k]&&day[k].length<N)day[k]=day[k].padEnd(N,"-")}});
+note("Ready. Data is stored on this device only, so download a CSV backup often.",true);render()}
 init();
 </script></body></html>
